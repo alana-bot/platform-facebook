@@ -1,0 +1,34 @@
+{
+  "name": "botler-platform-facebook",
+  "version": "1.0.0",
+  "description": "Botler <-> Facebook messenger",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/botlerjs/platform-facebook.git"
+  },
+  "author": "Adam Juhasz",
+  "license": "MIT",
+  "homepage": "https://github.com/botlerjs/platform-facebook#readme",
+  "devDependencies": {
+    "@types/body-parser": "0.0.33",
+    "@types/express": "^4.0.34",
+    "bluebird": "3.x",
+    "botler": "github:fyndme/bot-framework#v2.0",
+    "lodash": "4.x"
+  },
+  "peerDependencies": {
+    "botler": "2.x",
+    "bluebird": "3.x",
+    "lodash": "4.x"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "facebook-sendapi-types": "github:fyndme/facebook-sendapi-types",
+    "facebook-send-api": "^2.7.0"
+  }
+}
