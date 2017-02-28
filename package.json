@@ -21,7 +21,7 @@
     "lodash": "4.x"
   },
   "peerDependencies": {
-    "botler": "2.x",
+    "alana-core": "2.x",
     "bluebird": "3.x",
     "lodash": "4.x"
   },
