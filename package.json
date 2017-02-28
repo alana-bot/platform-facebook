@@ -17,7 +17,7 @@
     "@types/body-parser": "0.0.33",
     "@types/express": "^4.0.34",
     "bluebird": "3.x",
-    "botler": "github:alana-bot/core",
+    "alana-core": "github:alana-bot/core",
     "lodash": "4.x"
   },
   "peerDependencies": {
