@@ -1,23 +1,23 @@
 {
-  "name": "botler-platform-facebook",
+  "name": "alana-platform-facebook",
   "version": "1.0.0",
-  "description": "Botler <-> Facebook messenger",
+  "description": "Alana <-> Facebook messenger",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/botlerjs/platform-facebook.git"
+    "url": "git+https://github.com/alana-bot/platform-facebook.git"
   },
   "author": "Adam Juhasz",
   "license": "MIT",
-  "homepage": "https://github.com/botlerjs/platform-facebook#readme",
+  "homepage": "https://alana.cloud",
   "devDependencies": {
     "@types/body-parser": "0.0.33",
     "@types/express": "^4.0.34",
     "bluebird": "3.x",
-    "botler": "github:fyndme/bot-framework#v2.0",
+    "botler": "github:alana-bot/core",
     "lodash": "4.x"
   },
   "peerDependencies": {
