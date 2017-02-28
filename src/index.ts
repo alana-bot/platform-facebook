@@ -3,16 +3,16 @@ import * as bodyParser from 'body-parser';
 import * as Express from 'express';
 import FacebookAPI from 'facebook-send-api';
 import * as FacebookTypes from 'facebook-sendapi-types';
-import * as http from "http";
+import * as http from 'http';
 import * as _ from 'lodash';
 
-import { Message } from 'botler/lib/types/bot';
-import * as Bot from 'botler/lib/types/bot';
-import * as Messages from 'botler/lib/types/message';
-import { PlatformMiddleware } from 'botler/lib/types/platform';
-import { BasicUser, User } from 'botler/lib/types/user';
+import { Message } from 'alana-core/lib/types/bot';
+import * as Bot from 'alana-core/lib/types/bot';
+import * as Messages from 'alana-core/lib/types/message';
+import { PlatformMiddleware } from 'alana-core/lib/types/platform';
+import { BasicUser, User } from 'alana-core/lib/types/user';
 
-import Botler from 'botler';
+import Alana from 'alana-core';
 
 interface WebhookCallback {
   object: 'page';
@@ -24,7 +24,7 @@ interface WebhookCallback {
 }
 
 export default class Facbook implements PlatformMiddleware {
-  protected bot: Botler;
+  protected bot: Alana;
   private port: number;
   private route: string;
   private expressApp: Express.Express;
@@ -32,8 +32,9 @@ export default class Facbook implements PlatformMiddleware {
   private verifyToken: string;
   private FBSendAPI: FacebookAPI;
 
-  constructor(botler: Botler, port: number = 3000, route: string = '/webhook', verifyToken: string = 'botler') {
-    this.bot = botler;
+  constructor(theBot: Alana, port: number = 3000, route: string = '/webhook', verifyToken: string = 'alana-bot') {
+    this.bot = theBot;
+    this.bot.addPlatform(this);
     this.port = port;
     this.route = route;
     this.verifyToken = verifyToken;
@@ -164,7 +165,7 @@ export function mapInternalToFB<M extends Messages.Message>(message: M): Faceboo
             throw new Error('Unknown button type');
         }
       });
-      return FacebookAPI.exportButtonMessage(buttonMessage.text(), FBButtons);
+      return FacebookAPI.exportButtonMessage(buttonMessage.text, FBButtons);
     }
 
     default:
