@@ -1,5 +1,5 @@
 {
-  "name": "alana-platform-facebook",
+  "name": "@alana/platform-facebook",
   "version": "1.0.0",
   "description": "Alana <-> Facebook messenger",
   "main": "lib/index.js",
@@ -14,7 +14,8 @@
   "license": "MIT",
   "homepage": "https://alana.cloud",
   "devDependencies": {
-    "alana-core": "github:alana-bot/core",
+    "@alana/core": "2.x",
+    "@types/bluebird": "^3.5.0",
     "bluebird": "3.x",
     "lodash": "4.x"
   },

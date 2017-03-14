@@ -6,13 +6,13 @@ import * as FacebookTypes from 'facebook-sendapi-types';
 import * as http from 'http';
 import * as _ from 'lodash';
 
-import { Message } from 'alana-core/lib/types/bot';
-import * as Bot from 'alana-core/lib/types/bot';
-import * as Messages from 'alana-core/lib/types/message';
-import { PlatformMiddleware } from 'alana-core/lib/types/platform';
-import { BasicUser, User } from 'alana-core/lib/types/user';
+import { Message } from '@alana/core/lib/types/bot';
+import * as Bot from '@alana/core/lib/types/bot';
+import * as Messages from '@alana/core/lib/types/message';
+import { PlatformMiddleware } from '@alana/core/lib/types/platform';
+import { BasicUser, User } from '@alana/core/lib/types/user';
 
-import Alana from 'alana-core';
+import Alana from '@alana/core';
 
 interface WebhookCallback {
   object: 'page';
