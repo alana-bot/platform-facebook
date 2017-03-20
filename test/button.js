@@ -11,7 +11,7 @@ describe('button', function() {
   const tester = new BotTester.default(testingPort, webHookURL);
   process.env.FB_GRAPHURLBASE = `http://localhost:${testingPort}`;
   const bot = new Alana.default();
-  // bot.turnOnDebug();
+  bot.turnOnDebug();
   const platform = new FB(bot, botPort, 'access_token');
 
   before(function(){
@@ -27,6 +27,7 @@ describe('button', function() {
       .dialog((incoming, response) => {
         const buttons = response.sendButtons().text('buttons');
         buttons.addButton('postback', 'button 1', 'payload1');
+        buttons.addButton('url', 'button 2', 'https://alana.cloud');
         buttons.send()
       })
     const theScript = new BotTester.Script(Math.round(Math.random()*1000), '20');
@@ -36,6 +37,11 @@ describe('button', function() {
         type: 'postback',
         title: 'button 1',
         payload: 'payload1',
+      },
+      {
+        type: 'web_url',
+        title: 'button 2',
+        url: 'https://alana.cloud',
       }
     ])
     return tester.runScript(theScript);
@@ -46,6 +52,7 @@ describe('button', function() {
       .dialog((incoming, response) => {
         const buttons = response.sendButtons().text('buttons');
         buttons.addButton('postback', 'button 1', 'payload1');
+        buttons.addButton('url', 'button 2', 'https://alana.cloud');
         buttons.send()
       })
       .expect.button('payload1', (session, response) => {
@@ -58,6 +65,11 @@ describe('button', function() {
         type: 'postback',
         title: 'button 1',
         payload: 'payload1',
+      },
+      {
+        type: 'web_url',
+        title: 'button 2',
+        url: 'https://alana.cloud',
       }
     ])
     theScript.sendPostbackMessage('payload1');
