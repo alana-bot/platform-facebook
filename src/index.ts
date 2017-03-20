@@ -5,6 +5,7 @@ import FacebookAPI from 'facebook-send-api';
 import * as FacebookTypes from 'facebook-sendapi-types';
 import * as http from 'http';
 import * as _ from 'lodash';
+import * as request from 'request-promise';
 
 import { Message } from '@alana/core/lib/types/bot';
 import * as Bot from '@alana/core/lib/types/bot';
@@ -31,11 +32,13 @@ export default class Facbook implements PlatformMiddleware {
   private server: http.Server = null;
   private verifyToken: string;
   private FBSendAPI: FacebookAPI;
+  protected accessToken: string;
 
-  constructor(theBot: Alana, port: number = 3000, route: string = '/webhook', verifyToken: string = 'alana-bot') {
+  constructor(theBot: Alana, port: number = 3000, access_token: string, route: string = '/webhook', verifyToken: string = 'alana-bot') {
     this.bot = theBot;
     this.bot.addPlatform(this);
     this.port = port;
+    this.accessToken = access_token;
     this.route = route;
     this.verifyToken = verifyToken;
     this.FBSendAPI = new FacebookAPI(verifyToken);
@@ -50,9 +53,10 @@ export default class Facbook implements PlatformMiddleware {
     this.expressApp.post(this.route, (req, res, next) => {
       const wenhookCallback: FacebookTypes.WebhookCallback = req.body;
       const messagingEvents = _.flatten(wenhookCallback.entry.map(entry => entry.messaging));
+      res.sendStatus(200);
       for (let i = 0; i < messagingEvents.length; i++) {
         const event = messagingEvents[i];
-        this.processMessage(event);
+        this.convertAndProcessMessage(event);
       }
     });
   }
@@ -82,17 +86,18 @@ export default class Facbook implements PlatformMiddleware {
       .then(() => this);
   }
 
-  private processMessage(event: FacebookTypes.WebhookPayload) {
+  protected convertAndProcessMessage(event: FacebookTypes.WebhookPayload): Promise<void> {
+    const emptyPromise = Promise.resolve();
     if (event.message && event.message.is_echo) {
-      return;
+      return emptyPromise;
     }
 
     if (event.delivery) {
-      return;
+      return emptyPromise;
     }
 
     if (event.read) {
-      return;
+      return emptyPromise;
     }
 
     const user: BasicUser = {
@@ -100,37 +105,175 @@ export default class Facbook implements PlatformMiddleware {
       id: event.sender.id,
       platform: 'Facebook',
     };
-    if (event.message && event.message.quick_reply) {
-      this.processPostback(user, event);
+
+    if (event.message) {
+      if (event.message.quick_reply) {
+        const payload  = event.message.quick_reply.payload;
+        const message: Message.PostbackMessage = {
+          type: 'postback',
+          payload: payload,
+        };
+        return this.processMessage(user, message);
+      }
+
+      if (event.message.text) {
+        const text = event.message.text;
+        const message: Message.TextMessage = {
+          type: 'text',
+          text: text,
+        };
+        return this.processMessage(user, message);
+      }
+
+      if (event.message.attachments) {
+        const promises = event.message.attachments.map((attachement) => {
+          switch (attachement.type) {
+            case 'image': {
+              const message: Message.ImageMessage = {
+                type: 'image',
+                url: attachement.payload.url,
+              };
+              return this.processMessage(user, message);
+            }
+            // case 'audio': {
+            //   const message: Message.AudioMessage = {
+            //     type: 'audio',
+            //     url: attachement.payload.url,
+            //   };
+            //   return this.processMessage(user, message);
+            // }
+            // case 'video': {
+            //   const message = {
+            //     type: 'video',
+            //     url: attachement.payload.url,
+            //   };
+            //   return this.processMessage(user, message);
+            // }
+            // case 'file': {
+            //   const message = {
+            //     type: 'file',
+            //     url: attachement.payload.url,
+            //   };
+            //   return this.processMessage(user, message);
+            // }
+            // case 'location': {
+            //   const message = {
+            //     type: 'location',
+            //     coordinates: attachement.payload.coordinates,
+            //   };
+            //   return this.processMessage(user, message);
+            // }
+            default: {
+              console.error(`Can't handle ${attachement.type} message type`);
+              return emptyPromise;
+            }
+          }
+        });
+        return Promise.all(promises).then(() => { return; });
+      }
     }
-
-    if (event.message && event.message.text) {
-      this.processText(user, event);
-    }
-
-    // if (event.message && event.message.attachment.type === "image") {
-
-    // }
 
     if (event.postback) {
-      this.processPostback(user, event);
+      const payload = event.postback.payload;
+      // const referal = event.postback.refferal;
+      const message: Message.PostbackMessage = {
+        type: 'postback',
+        payload: payload,
+      };
+      return this.processMessage(user, message);
     }
+
+    return emptyPromise;
   }
 
-  private processPostback(user: BasicUser, event: FacebookTypes.WebhookPayload) {
-    const message: Message.PostbackMessage = {
-      payload: event.postback.payload,
-      type: 'postback',
-    };
-    this.bot.processMessage(user, message);
+  protected processMessage(user: BasicUser, message: Message.IncomingMessage) {
+    return this.bot.processMessage(user, message);
   }
 
-  private processText(user: BasicUser, event: FacebookTypes.WebhookPayload) {
-    const message: Message.TextMessage = {
-      text: event.message.text,
-      type: 'text',
-    };
-    this.bot.processMessage(user, message);
+  public getUser(id: string): Promise<FacebookTypes.FacebookUser | {}> {
+    return request({
+      uri: `https://graph.facebook.com/v2.6/${id}`,
+      method: 'GET',
+      qs: {
+        fields: 'first_name,last_name,profile_pic,locale,timezone,gender',
+        access_token: this.accessToken,
+      },
+    })
+    .then((response: FacebookTypes.FacebookUser | {}) => {
+      return response;
+    });
+  }
+
+  public setPersistentMenuCTA(items: Array<FacebookTypes.MessengerButton>, composer_input_disabled: boolean = false, locale: string = 'default') {
+    return request({
+      uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+      method: 'POST',
+      json: true,
+      qs: {
+        access_token: this.accessToken,
+      },
+      body: {
+        persistent_menu: [
+          {
+            locale: locale,
+            composer_input_disabled: composer_input_disabled,
+            call_to_actions: items,
+          }
+        ],
+      },
+    })
+    .then((response) => {
+      if (response.result && response.result === 'success') {
+        return;
+      }
+      throw new Error('Not sucessfull');
+    });
+  }
+
+  public setGetStartedPayload(payload: string) {
+    return request({
+      uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+      method: 'POST',
+      json: true,
+      qs: {
+        access_token: this.accessToken,
+      },
+      body: {
+        get_started: {
+          payload: payload,
+        },
+      },
+    })
+    .then((response) => {
+      if (response.result && response.result === 'success') {
+        return;
+      }
+      throw new Error('Not sucessfull');
+    });
+  }
+  public setGreeting(text: string, locale: string = 'default') {
+    return request({
+        uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+        method: 'POST',
+        json: true,
+        qs: {
+          access_token: this.accessToken,
+        },
+        body: {
+          greeting: [
+            {
+              locale: locale,
+              text: text,
+            },
+          ],
+        },
+      })
+      .then((response) => {
+        if (response.result && response.result === 'success') {
+          return;
+        }
+        throw new Error('Not sucessfull');
+      });
   }
 }
 
