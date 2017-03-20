@@ -45,6 +45,9 @@ export default class Facbook implements PlatformMiddleware {
     this.expressApp = Express();
     this.expressApp.use(bodyParser.json());
     this.expressApp.get(this.route, (req, res, next) => {
+      if (this.bot.debugOn) {
+        console.log('Received a verify request with token', req.query['hub.verify_token']);
+      }
       if (req.query['hub.verify_token'] === this.verifyToken) {
         return res.send(req.query['hub.challenge']);
       }
@@ -53,6 +56,9 @@ export default class Facbook implements PlatformMiddleware {
     this.expressApp.post(this.route, (req, res, next) => {
       const wenhookCallback: FacebookTypes.WebhookCallback = req.body;
       const messagingEvents = _.flatten(wenhookCallback.entry.map(entry => entry.messaging));
+      if (this.bot.debugOn) {
+        console.log(`Recieved ${messagingEvents.length} messages`);
+      }
       res.sendStatus(200);
       for (let i = 0; i < messagingEvents.length; i++) {
         const event = messagingEvents[i];
@@ -89,14 +95,23 @@ export default class Facbook implements PlatformMiddleware {
   protected convertAndProcessMessage(event: FacebookTypes.WebhookPayload): Promise<void> {
     const emptyPromise = Promise.resolve();
     if (event.message && event.message.is_echo) {
+      if (this.bot.debugOn) {
+        console.log('Received a message echo');
+      }
       return emptyPromise;
     }
 
     if (event.delivery) {
+      if (this.bot.debugOn) {
+        console.log('Received a delivery confirmation');
+      }
       return emptyPromise;
     }
 
     if (event.read) {
+      if (this.bot.debugOn) {
+        console.log('Received a read confirmation');
+      }
       return emptyPromise;
     }
 
@@ -113,6 +128,9 @@ export default class Facbook implements PlatformMiddleware {
           type: 'postback',
           payload: payload,
         };
+        if (this.bot.debugOn) {
+          console.log('Received a quick reply message', payload);
+        }
         return this.processMessage(user, message);
       }
 
@@ -122,11 +140,17 @@ export default class Facbook implements PlatformMiddleware {
           type: 'text',
           text: text,
         };
+        if (this.bot.debugOn) {
+          console.log('Received a text message', text);
+        }
         return this.processMessage(user, message);
       }
 
       if (event.message.attachments) {
         const promises = event.message.attachments.map((attachement) => {
+          if (this.bot.debugOn) {
+            console.log('Received an attachement message of type', attachement.type);
+          }
           switch (attachement.type) {
             case 'image': {
               const message: Message.ImageMessage = {
@@ -180,9 +204,15 @@ export default class Facbook implements PlatformMiddleware {
         type: 'postback',
         payload: payload,
       };
+      if (this.bot.debugOn) {
+        console.log('Received an postback', payload);
+      }
       return this.processMessage(user, message);
     }
 
+    if (this.bot.debugOn) {
+      console.log('Received an unknown message', event);
+    }
     return emptyPromise;
   }
 
