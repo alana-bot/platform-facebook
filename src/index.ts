@@ -15,6 +15,8 @@ import { BasicUser, User } from '@alana/core/lib/types/user';
 
 import Alana from '@alana/core';
 
+let graph_url: string = null;
+
 interface WebhookCallback {
   object: 'page';
   entry: Array<{
@@ -41,7 +43,8 @@ export default class Facbook implements PlatformMiddleware {
     this.accessToken = access_token;
     this.route = route;
     this.verifyToken = verifyToken;
-    this.FBSendAPI = new FacebookAPI(verifyToken);
+    graph_url = process.env.FB_GRAPHURLBASE || 'https://graph.facebook.com';
+    this.FBSendAPI = new FacebookAPI(access_token, `${graph_url}/v2.6`);
     this.expressApp = Express();
     this.expressApp.use(bodyParser.json());
     this.expressApp.get(this.route, (req, res, next) => {
@@ -70,7 +73,7 @@ export default class Facbook implements PlatformMiddleware {
   public start() {
     this.server = this.expressApp.listen(this.port, () => {
       if (this.bot.debugOn) {
-        console.log(`Facebook platform listening on port ${this.port}`);
+        console.log(`Facebook platform listening at http://localhost:${this.port}${this.route}`);
       }
     });
     return Promise.resolve(this);
@@ -222,7 +225,7 @@ export default class Facbook implements PlatformMiddleware {
 
   public getUser(id: string): Promise<FacebookTypes.FacebookUser | {}> {
     return request({
-      uri: `https://graph.facebook.com/v2.6/${id}`,
+      uri: `${graph_url}/v2.6/${id}`,
       method: 'GET',
       qs: {
         fields: 'first_name,last_name,profile_pic,locale,timezone,gender',
@@ -236,7 +239,7 @@ export default class Facbook implements PlatformMiddleware {
 
   public setPersistentMenuCTA(items: Array<FacebookTypes.MessengerButton>, composer_input_disabled: boolean = false, locale: string = 'default') {
     return request({
-      uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+      uri: `${graph_url}/v2.6/me/messenger_profile`,
       method: 'POST',
       json: true,
       qs: {
@@ -262,7 +265,7 @@ export default class Facbook implements PlatformMiddleware {
 
   public setGetStartedPayload(payload: string) {
     return request({
-      uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+      uri: `${graph_url}/v2.6/me/messenger_profile`,
       method: 'POST',
       json: true,
       qs: {
@@ -283,7 +286,7 @@ export default class Facbook implements PlatformMiddleware {
   }
   public setGreeting(text: string, locale: string = 'default') {
     return request({
-        uri: `https://graph.facebook.com/v2.6/me/messenger_profile`,
+        uri: `${graph_url}/v2.6/me/messenger_profile`,
         method: 'POST',
         json: true,
         qs: {
