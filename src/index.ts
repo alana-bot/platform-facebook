@@ -49,10 +49,10 @@ export default class Facbook implements PlatformMiddleware {
     this.FBSendAPI = new FacebookAPI(access_token, `${graph_url}/v2.6`);
     this.expressApp = Express();
     this.expressApp.use(bodyParser.json());
-    this.expressApp.use((req, res, next) => {
-      console.log(req.method, req.path, req.query);
-      next();
-    });
+    // this.expressApp.use((req, res, next) => {
+    //   console.log(req.method, req.path, req.query);
+    //   next();
+    // });
     this.expressApp.get(this.route, (req, res, next) => {
       if (this.bot.debugOn) {
         console.log('Received a verify request with token', req.query['hub.verify_token']);
@@ -63,9 +63,6 @@ export default class Facbook implements PlatformMiddleware {
       return res.send('Error, wrong validation token');
     });
     this.expressApp.post(this.route, (req, res, next) => {
-      if (this.bot.debugOn) {
-        console.log(`Recieved "${util.inspect(req.body)}"`);
-      }
       const wenhookCallback: FacebookTypes.WebhookCallback = req.body;
       const messagingEvents = _.flatten(wenhookCallback.entry.map(entry => entry.messaging));
       if (this.bot.debugOn) {
@@ -101,9 +98,6 @@ export default class Facbook implements PlatformMiddleware {
 
   public send<U extends User, M extends Message.Message>(user: U, message: M): Promise<this> {
     const facebookMessage = mapInternalToFB(message);
-    if (this.bot.debugOn) {
-      console.log(user.id, util.inspect(facebookMessage));
-    }
     return this.FBSendAPI.sendMessageToFB(user.id, facebookMessage)
       .then(() => this);
   }
