@@ -58,6 +58,9 @@ export default class Facbook implements PlatformMiddleware {
       return res.send('Error, wrong validation token');
     });
     this.expressApp.post(this.route, (req, res, next) => {
+      if (this.bot.debugOn) {
+        console.log(`Recieved "${req.body}"`);
+      }
       const wenhookCallback: FacebookTypes.WebhookCallback = req.body;
       const messagingEvents = _.flatten(wenhookCallback.entry.map(entry => entry.messaging));
       if (this.bot.debugOn) {
