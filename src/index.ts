@@ -35,6 +35,7 @@ export default class Facbook implements PlatformMiddleware {
   private verifyToken: string;
   private FBSendAPI: FacebookAPI;
   protected accessToken: string;
+  protected getStartedPostback: string;
 
   constructor(theBot: Alana, port: number = 3000, access_token: string, route: string = '/webhook', verifyToken: string = 'alana-bot') {
     this.bot = theBot;
@@ -68,6 +69,7 @@ export default class Facbook implements PlatformMiddleware {
         this.convertAndProcessMessage(event);
       }
     });
+    return this;
   }
 
   public start() {
@@ -202,6 +204,15 @@ export default class Facbook implements PlatformMiddleware {
 
     if (event.postback) {
       const payload = event.postback.payload;
+      if (payload === this.getStartedPostback) {
+        const greeting: Message.GreetingMessage = {
+          type: 'greeting',
+        };
+        if (this.bot.debugOn) {
+          console.log('New user, sending greeting', payload);
+        }
+        return this.processMessage(user, greeting);
+      }
       // const referal = event.postback.refferal;
       const message: Message.PostbackMessage = {
         type: 'postback',
@@ -264,6 +275,7 @@ export default class Facbook implements PlatformMiddleware {
   }
 
   public setGetStartedPayload(payload: string) {
+    this.getStartedPostback = payload;
     return request({
       uri: `${graph_url}/v2.6/me/messenger_profile`,
       method: 'POST',

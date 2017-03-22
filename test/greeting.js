@@ -22,7 +22,8 @@ describe('get started', function() {
     return tester.startListening();
   });
   
-  it.only('using postback', function(){
+  it('using postback', function(){
+    platform.setGetStartedPayload('get_started');
     bot.addGreeting((user, response) => {
       response.sendText('hello new user');
     })

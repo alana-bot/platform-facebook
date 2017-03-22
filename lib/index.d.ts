@@ -15,6 +15,7 @@ export default class Facbook implements PlatformMiddleware {
     private verifyToken;
     private FBSendAPI;
     protected accessToken: string;
+    protected getStartedPostback: string;
     constructor(theBot: Alana, port: number, access_token: string, route?: string, verifyToken?: string);
     start(): Promise<this>;
     stop(): Promise<this>;

@@ -1,10 +1,10 @@
 {
   "name": "@alana/platform-facebook",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Alana <-> Facebook messenger",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsc && mocha"
   },
   "repository": {
     "type": "git",
