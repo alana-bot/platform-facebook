@@ -1,6 +1,6 @@
 {
   "name": "@alana/platform-facebook",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Alana <-> Facebook messenger",
   "main": "lib/index.js",
   "scripts": {

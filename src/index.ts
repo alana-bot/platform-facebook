@@ -1,7 +1,6 @@
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as Express from 'express';
-import FacebookAPI from 'facebook-send-api';
 import * as FacebookTypes from 'facebook-sendapi-types';
 import * as http from 'http';
 import * as _ from 'lodash';
@@ -15,8 +14,6 @@ import { PlatformMiddleware } from '@alana/core/lib/types/platform';
 import { BasicUser, User } from '@alana/core/lib/types/user';
 
 import Alana from '@alana/core';
-
-let graph_url: string = null;
 
 interface WebhookCallback {
   object: 'page';
@@ -34,9 +31,9 @@ export default class Facbook implements PlatformMiddleware {
   private expressApp: Express.Express;
   private server: http.Server = null;
   private verifyToken: string;
-  private FBSendAPI: FacebookAPI;
   protected accessToken: string;
   protected getStartedPostback: string;
+  public graph_url: string = 'https://graph.facebook.com';
 
   constructor(theBot: Alana, port: number = 3000, access_token: string, route: string = '/webhook', verifyToken: string = 'alana-bot') {
     this.bot = theBot;
@@ -45,8 +42,6 @@ export default class Facbook implements PlatformMiddleware {
     this.accessToken = access_token;
     this.route = route;
     this.verifyToken = verifyToken;
-    graph_url = process.env.FB_GRAPHURLBASE || 'https://graph.facebook.com';
-    this.FBSendAPI = new FacebookAPI(access_token, `${graph_url}/v2.6`);
     this.expressApp = Express();
     this.expressApp.use(bodyParser.json());
     // this.expressApp.use((req, res, next) => {
@@ -77,6 +72,18 @@ export default class Facbook implements PlatformMiddleware {
     return this;
   }
 
+  protected sendMessage(payload:  FacebookTypes.MessengerPayload) {
+    return request({
+      uri: `${this.graph_url}/v2.6/me/messages`,
+      method: 'POST',
+      qs: {
+        access_token: this.accessToken,
+      },
+      json: true,
+      body: payload,
+    });
+  }
+
   public start() {
     this.server = this.expressApp.listen(this.port, () => {
       if (this.bot.debugOn) {
@@ -96,9 +103,10 @@ export default class Facbook implements PlatformMiddleware {
     return Promise.resolve(this);
   }
 
-  public send<U extends User, M extends Message.Message>(user: U, message: M): Promise<this> {
+  public send<U extends User>(user: U, message: Message.OutgoingMessage): Promise<this> {
     const facebookMessage = mapInternalToFB(message);
-    return this.FBSendAPI.sendMessageToFB(user.id, facebookMessage)
+    facebookMessage.recipient.id = user.id;
+    return this.sendMessage(facebookMessage)
       .then(() => this);
   }
 
@@ -239,102 +247,29 @@ export default class Facbook implements PlatformMiddleware {
     return this.bot.processMessage(user, message);
   }
 
-  public getUser(id: string): Promise<FacebookTypes.FacebookUser | {}> {
-    return request({
-      uri: `${graph_url}/v2.6/${id}`,
-      method: 'GET',
-      qs: {
-        fields: 'first_name,last_name,profile_pic,locale,timezone,gender',
-        access_token: this.accessToken,
-      },
-    })
-    .then((response: FacebookTypes.FacebookUser | {}) => {
-      return response;
-    });
-  }
-
-  public setPersistentMenuCTA(items: Array<FacebookTypes.MessengerButton>, composer_input_disabled: boolean = false, locale: string = 'default') {
-    return request({
-      uri: `${graph_url}/v2.6/me/messenger_profile`,
-      method: 'POST',
-      json: true,
-      qs: {
-        access_token: this.accessToken,
-      },
-      body: {
-        persistent_menu: [
-          {
-            locale: locale,
-            composer_input_disabled: composer_input_disabled,
-            call_to_actions: items,
-          }
-        ],
-      },
-    })
-    .then((response) => {
-      if (response.result && response.result === 'success') {
-        return;
-      }
-      throw new Error('Not sucessfull');
-    });
-  }
-
   public setGetStartedPayload(payload: string) {
     this.getStartedPostback = payload;
-    return request({
-      uri: `${graph_url}/v2.6/me/messenger_profile`,
-      method: 'POST',
-      json: true,
-      qs: {
-        access_token: this.accessToken,
-      },
-      body: {
-        get_started: {
-          payload: payload,
-        },
-      },
-    })
-    .then((response) => {
-      if (response.result && response.result === 'success') {
-        return;
-      }
-      throw new Error('Not sucessfull');
-    });
-  }
-  public setGreeting(text: string, locale: string = 'default') {
-    return request({
-        uri: `${graph_url}/v2.6/me/messenger_profile`,
-        method: 'POST',
-        json: true,
-        qs: {
-          access_token: this.accessToken,
-        },
-        body: {
-          greeting: [
-            {
-              locale: locale,
-              text: text,
-            },
-          ],
-        },
-      })
-      .then((response) => {
-        if (response.result && response.result === 'success') {
-          return;
-        }
-        throw new Error('Not sucessfull');
-      });
   }
 }
 
-export function mapInternalToFB<M extends Messages.Message>(message: M): FacebookTypes.MessengerMessage {
+export function mapInternalToFB(message: Message.OutgoingMessage): FacebookTypes.MessengerPayload {
+  const payload: FacebookTypes.MessengerPayload = {
+    recipient: {
+      id: null,
+    },
+    notification_type: 'REGULAR'
+  };
   switch (message.type) {
-    case 'text':
-      return FacebookAPI.exportTextMessage((<Messages.TextMessage> (message as any)).text);
+    case 'text': {
+      const textMessage: FacebookTypes.MessengerTextMessage = {
+        text: message.text,
+      };
+      payload.message = textMessage;
+      return payload;
+    }
 
     case 'button': {
-      const buttonMessage: Messages.ButtonMessage = <any> message;
-      const FBButtons: Array<FacebookTypes.MessengerButton> = buttonMessage.buttons.map(button => {
+      const FBButtons: Array<FacebookTypes.MessengerButton> = message.buttons.map(button => {
         switch (button.type) {
           case 'postback': {
             const fb: FacebookTypes.MessengerPostbackButton = {
@@ -358,7 +293,20 @@ export function mapInternalToFB<M extends Messages.Message>(message: M): Faceboo
             throw new Error('Unknown button type');
         }
       });
-      return FacebookAPI.exportButtonMessage(buttonMessage.text, FBButtons);
+      const FBPayload: FacebookTypes.MessengerButtonPayload = {
+        template_type: 'button',
+        text: message.text,
+        buttons: FBButtons,
+      };
+      const FBAttachement: FacebookTypes.MessengerTemplateAttachement = {
+        type: 'template',
+        payload: FBPayload,
+      };
+      const FBMessage: FacebookTypes.MessengerMessage = {
+        attachment: FBAttachement,
+      };
+      payload.message = FBMessage;
+      return payload;
     }
 
     default:

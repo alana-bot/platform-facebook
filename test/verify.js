@@ -10,7 +10,6 @@ describe('verify', function() {
   const botPort = Math.round(Math.random()*1000) + 4000;
   const webHookURL = 'http://localhost:' + botPort + '/webhook';
   const tester = new BotTester.default(testingPort, webHookURL);
-  process.env.FB_GRAPHURLBASE = `http://localhost:${testingPort}`;
   const bot = new Alana.default();
   bot.turnOnDebug();
   const platform = new FB(bot, botPort, 'access_token', '/webhook', 'verify_me');
@@ -18,6 +17,7 @@ describe('verify', function() {
   before(function(){
     // start your own bot here or having it running already in the background
     // redirect all Facebook Requests to http://localhost:3100/v2.6 and not https://graph.facebook.com/v2.6
+    platform.graph_url = `http://localhost:${testingPort}`;
     bot.start();
     return tester.startListening();
   });

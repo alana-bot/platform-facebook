@@ -1,8 +1,9 @@
+/// <reference types="request-promise" />
 /// <reference types="bluebird" />
 import * as Promise from 'bluebird';
 import * as FacebookTypes from 'facebook-sendapi-types';
+import * as request from 'request-promise';
 import { Message } from '@alana/core/lib/types/bot';
-import * as Messages from '@alana/core/lib/types/message';
 import { PlatformMiddleware } from '@alana/core/lib/types/platform';
 import { BasicUser, User } from '@alana/core/lib/types/user';
 import Alana from '@alana/core';
@@ -13,18 +14,16 @@ export default class Facbook implements PlatformMiddleware {
     private expressApp;
     private server;
     private verifyToken;
-    private FBSendAPI;
     protected accessToken: string;
     protected getStartedPostback: string;
+    graph_url: string;
     constructor(theBot: Alana, port: number, access_token: string, route?: string, verifyToken?: string);
+    protected sendMessage(payload: FacebookTypes.MessengerPayload): request.RequestPromise;
     start(): Promise<this>;
     stop(): Promise<this>;
-    send<U extends User, M extends Message.Message>(user: U, message: M): Promise<this>;
+    send<U extends User>(user: U, message: Message.OutgoingMessage): Promise<this>;
     protected convertAndProcessMessage(event: FacebookTypes.WebhookPayload): Promise<void>;
     protected processMessage(user: BasicUser, message: Message.IncomingMessage): Promise<void>;
-    getUser(id: string): Promise<FacebookTypes.FacebookUser | {}>;
-    setPersistentMenuCTA(items: Array<FacebookTypes.MessengerButton>, composer_input_disabled?: boolean, locale?: string): Promise<void>;
-    setGetStartedPayload(payload: string): Promise<void>;
-    setGreeting(text: string, locale?: string): Promise<void>;
+    setGetStartedPayload(payload: string): void;
 }
-export declare function mapInternalToFB<M extends Messages.Message>(message: M): FacebookTypes.MessengerMessage;
+export declare function mapInternalToFB(message: Message.OutgoingMessage): FacebookTypes.MessengerPayload;
