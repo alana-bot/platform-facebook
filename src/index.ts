@@ -66,7 +66,18 @@ export default class Facbook implements PlatformMiddleware {
       res.sendStatus(200);
       for (let i = 0; i < messagingEvents.length; i++) {
         const event = messagingEvents[i];
-        this.convertAndProcessMessage(event);
+        const message: Message.IncomingMessage = mapFBToInternal(event, this.getStartedPostback);
+        if (message !== null) {
+          const user: BasicUser = {
+            _platform: this,
+            id: event.sender.id,
+            platform: 'Facebook',
+          };
+          if (this.bot.debugOn) {
+            console.log(`Processing ${message.type} message for ${user.id}`);
+          }
+          this.processMessage(user, message);
+        }
       }
     });
     return this;
@@ -110,34 +121,27 @@ export default class Facbook implements PlatformMiddleware {
       .then(() => this);
   }
 
-  protected convertAndProcessMessage(event: FacebookTypes.WebhookPayload): Promise<void> {
-    const emptyPromise = Promise.resolve();
+  protected processMessage(user: BasicUser, message: Message.IncomingMessage) {
+    return this.bot.processMessage(user, message);
+  }
+
+  public setGetStartedPayload(payload: string) {
+    this.getStartedPostback = payload;
+  }
+}
+
+export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedPayload: string = null): Message.IncomingMessage {
     if (event.message && event.message.is_echo) {
-      if (this.bot.debugOn) {
-        console.log('Received a message echo');
-      }
-      return emptyPromise;
+      return null;
     }
 
     if (event.delivery) {
-      if (this.bot.debugOn) {
-        console.log('Received a delivery confirmation');
-      }
-      return emptyPromise;
+      return null;
     }
 
     if (event.read) {
-      if (this.bot.debugOn) {
-        console.log('Received a read confirmation');
-      }
-      return emptyPromise;
+      return null;
     }
-
-    const user: BasicUser = {
-      _platform: this,
-      id: event.sender.id,
-      platform: 'Facebook',
-    };
 
     if (event.message) {
       if (event.message.quick_reply) {
@@ -146,10 +150,7 @@ export default class Facbook implements PlatformMiddleware {
           type: 'postback',
           payload: payload,
         };
-        if (this.bot.debugOn) {
-          console.log('Received a quick reply message', payload);
-        }
-        return this.processMessage(user, message);
+        return message;
       }
 
       if (event.message.text) {
@@ -158,98 +159,72 @@ export default class Facbook implements PlatformMiddleware {
           type: 'text',
           text: text,
         };
-        if (this.bot.debugOn) {
-          console.log('Received a text message', text);
-        }
-        return this.processMessage(user, message);
+        return message;
       }
 
-      if (event.message.attachments) {
-        const promises = event.message.attachments.map((attachement) => {
-          if (this.bot.debugOn) {
-            console.log('Received an attachement message of type', attachement.type);
+      if (event.message.attachment) {
+        const attachement = event.message.attachment;
+        switch (attachement.type) {
+          case 'image': {
+            const message: Message.ImageMessage = {
+              type: 'image',
+              url: attachement.payload.url,
+            };
+            return message;
           }
-          switch (attachement.type) {
-            case 'image': {
-              const message: Message.ImageMessage = {
-                type: 'image',
-                url: attachement.payload.url,
-              };
-              return this.processMessage(user, message);
-            }
-            // case 'audio': {
-            //   const message: Message.AudioMessage = {
-            //     type: 'audio',
-            //     url: attachement.payload.url,
-            //   };
-            //   return this.processMessage(user, message);
-            // }
-            // case 'video': {
-            //   const message = {
-            //     type: 'video',
-            //     url: attachement.payload.url,
-            //   };
-            //   return this.processMessage(user, message);
-            // }
-            // case 'file': {
-            //   const message = {
-            //     type: 'file',
-            //     url: attachement.payload.url,
-            //   };
-            //   return this.processMessage(user, message);
-            // }
-            // case 'location': {
-            //   const message = {
-            //     type: 'location',
-            //     coordinates: attachement.payload.coordinates,
-            //   };
-            //   return this.processMessage(user, message);
-            // }
-            default: {
-              console.error(`Can't handle ${attachement.type} message type`);
-              return emptyPromise;
-            }
+          // case 'audio': {
+          //   const message: Message.AudioMessage = {
+          //     type: 'audio',
+          //     url: attachement.payload.url,
+          //   };
+          //   return message;
+          // }
+          // case 'video': {
+          //   const message = {
+          //     type: 'video',
+          //     url: attachement.payload.url,
+          //   };
+          //   return message;
+          // }
+          // case 'file': {
+          //   const message = {
+          //     type: 'file',
+          //     url: attachement.payload.url,
+          //   };
+          //   return message;
+          // }
+          // case 'location': {
+          //   const message = {
+          //     type: 'location',
+          //     coordinates: attachement.payload.coordinates,
+          //   };
+          //   return message;
+          // }
+          default: {
+            console.error(`Can't handle ${attachement.type} message type`);
+            return null;
           }
-        });
-        return Promise.all(promises).then(() => { return; });
+        }
       }
     }
 
     if (event.postback) {
       const payload = event.postback.payload;
-      if (payload === this.getStartedPostback) {
+      if (payload === getStartedPayload) {
         const greeting: Message.GreetingMessage = {
           type: 'greeting',
         };
-        if (this.bot.debugOn) {
-          console.log('New user, sending greeting', payload);
-        }
-        return this.processMessage(user, greeting);
+        return greeting;
       }
       // const referal = event.postback.refferal;
       const message: Message.PostbackMessage = {
         type: 'postback',
         payload: payload,
       };
-      if (this.bot.debugOn) {
-        console.log('Received an postback', payload);
-      }
-      return this.processMessage(user, message);
+      return message;
     }
 
-    if (this.bot.debugOn) {
-      console.log('Received an unknown message', event);
-    }
-    return emptyPromise;
-  }
-
-  protected processMessage(user: BasicUser, message: Message.IncomingMessage) {
-    return this.bot.processMessage(user, message);
-  }
-
-  public setGetStartedPayload(payload: string) {
-    this.getStartedPostback = payload;
-  }
+    return null;
 }
 
 export function mapInternalToFB(message: Message.OutgoingMessage): FacebookTypes.MessengerPayload {

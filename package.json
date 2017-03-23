@@ -1,6 +1,6 @@
 {
   "name": "@alana/platform-facebook",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Facebook messenger connector for alana bots",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

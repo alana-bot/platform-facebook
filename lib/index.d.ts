@@ -22,8 +22,8 @@ export default class Facbook implements PlatformMiddleware {
     start(): Promise<this>;
     stop(): Promise<this>;
     send<U extends User>(user: U, message: Message.OutgoingMessage): Promise<this>;
-    protected convertAndProcessMessage(event: FacebookTypes.WebhookPayload): Promise<void>;
     protected processMessage(user: BasicUser, message: Message.IncomingMessage): Promise<void>;
     setGetStartedPayload(payload: string): void;
 }
+export declare function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedPayload?: string): Message.IncomingMessage;
 export declare function mapInternalToFB(message: Message.OutgoingMessage): FacebookTypes.MessengerPayload;
