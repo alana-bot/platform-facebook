@@ -1,10 +1,12 @@
 {
   "name": "@alana/platform-facebook",
-  "version": "1.0.11",
-  "description": "Alana <-> Facebook messenger",
+  "version": "1.0.12",
+  "description": "Facebook messenger connector for alana bots",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "tsc && mocha"
+    "test": "tsc && mocha",
+    "prepublish": "npm test"
   },
   "repository": {
     "type": "git",
