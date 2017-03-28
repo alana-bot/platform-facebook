@@ -284,6 +284,45 @@ export function mapInternalToFB(message: Message.OutgoingMessage): FacebookTypes
       return payload;
     }
 
+    case 'image': {
+      const image: FacebookTypes.MessengerImageAttachment = {
+        type: 'image',
+        payload: {
+          url: message.url
+        },
+      };
+      payload.message = {
+        attachment: image,
+      };
+      return payload;
+    }
+
+    case 'audio': {
+      const audio: FacebookTypes.MessengerAudioAttachment = {
+        type: 'audio',
+        payload: {
+          url: message.url
+        },
+      };
+      payload.message = {
+        attachment: audio,
+      };
+      return payload;
+    }
+
+    // case 'video': {
+    //   const audio: FacebookTypes.MessengerVideoAttachment = {
+    //     type: 'video',
+    //     payload: {
+    //       url: message.url
+    //     },
+    //   };
+    //   payload.message = {
+    //     attachment: audio,
+    //   };
+    //   return payload;
+    // }
+
     default:
       return null;
   }
