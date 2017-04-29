@@ -6,6 +6,7 @@ import * as http from 'http';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import * as util from 'util';
+const uuidV1 = require('uuid/v1');
 
 import { Message } from '@alana/core/lib/types/bot';
 import * as Bot from '@alana/core/lib/types/bot';
@@ -149,6 +150,8 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
         const message: Message.PostbackMessage = {
           type: 'postback',
           payload: payload,
+          id: uuidV1(),
+          conversation_id: event.recipient.id || event.recipient.phone_number,
         };
         return message;
       }
@@ -158,6 +161,8 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
         const message: Message.TextMessage = {
           type: 'text',
           text: text,
+          id: uuidV1(),
+          conversation_id: event.recipient.id || event.recipient.phone_number,
         };
         return message;
       }
@@ -169,6 +174,8 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
             const message: Message.ImageMessage = {
               type: 'image',
               url: attachement.payload.url,
+              id: uuidV1(),
+              conversation_id: event.recipient.id || event.recipient.phone_number,
             };
             return message;
           }
@@ -213,6 +220,8 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
       if (payload === getStartedPayload) {
         const greeting: Message.GreetingMessage = {
           type: 'greeting',
+          id: uuidV1(),
+          conversation_id: event.recipient.id || event.recipient.phone_number,
         };
         return greeting;
       }
@@ -220,6 +229,8 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
       const message: Message.PostbackMessage = {
         type: 'postback',
         payload: payload,
+        id: uuidV1(),
+        conversation_id: event.recipient.id || event.recipient.phone_number,
       };
       return message;
     }

@@ -34,6 +34,7 @@
     "facebook-send-api": "^2.7.0",
     "facebook-sendapi-types": "github:fyndme/facebook-sendapi-types",
     "request": "^2.81.0",
-    "request-promise": "^4.2.0"
+    "request-promise": "^4.2.0",
+    "uuid": "^3.0.1"
   }
 }
