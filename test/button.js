@@ -24,7 +24,7 @@ describe('button', function() {
   it('send buttons', function(){
     bot.newScript()
       .dialog((incoming, response) => {
-        const buttons = response.sendButtons().text('buttons');
+        const buttons = response.createButtons().text('buttons');
         buttons.addButton('postback', 'button 1', 'payload1');
         buttons.addButton('url', 'button 2', 'https://alana.cloud');
         buttons.send()
@@ -49,7 +49,7 @@ describe('button', function() {
   it('respond with postback', function(){
     bot.newScript()
       .dialog((incoming, response) => {
-        const buttons = response.sendButtons().text('buttons');
+        const buttons = response.createButtons().text('buttons');
         buttons.addButton('postback', 'button 1', 'payload1');
         buttons.addButton('url', 'button 2', 'https://alana.cloud');
         buttons.send()
