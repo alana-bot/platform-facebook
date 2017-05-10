@@ -6,7 +6,7 @@ import * as http from 'http';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import * as util from 'util';
-const uuidV1 = require('uuid/v1');
+const uuidV1: () => string = require('uuid/v1');
 
 import { Message } from '@alana/core/lib/types/bot';
 import * as Bot from '@alana/core/lib/types/bot';
@@ -212,6 +212,17 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
             return null;
           }
         }
+      }
+
+      if (event.message.sticker_id) {
+        const attachement: FacebookTypes.MessengerStickerAttachement = event.message.attachments.filter((attachement) => attachement.type === 'image')[0] as FacebookTypes.MessengerStickerAttachement;
+        const message: Message.ImageMessage = {
+          type: 'image',
+          url: attachement.payload.url,
+          id: uuidV1(),
+          conversation_id: event.recipient.id || event.recipient.phone_number,
+        };
+        return message;
       }
     }
 
