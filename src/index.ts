@@ -167,6 +167,10 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
         return message;
       }
 
+      if (event.message.attachments) {
+        event.message.attachment = event.message.attachments[0];
+      }
+
       if (event.message.attachment) {
         const attachement = event.message.attachment;
         switch (attachement.type) {
