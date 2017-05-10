@@ -167,6 +167,17 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
         return message;
       }
 
+      if (event.message.sticker_id) {
+        const attachement: FacebookTypes.MessengerStickerAttachement = event.message.attachments.filter((attachement) => attachement.type === 'image')[0] as FacebookTypes.MessengerStickerAttachement;
+        const message: Message.ImageMessage = {
+          type: 'image',
+          url: attachement.payload.url,
+          id: uuidV1(),
+          conversation_id: event.recipient.id || event.recipient.phone_number,
+        };
+        return message;
+      }
+
       if (event.message.attachments) {
         event.message.attachment = event.message.attachments[0];
       }
@@ -216,17 +227,6 @@ export function mapFBToInternal(event: FacebookTypes.WebhookPayload, getStartedP
             return null;
           }
         }
-      }
-
-      if (event.message.sticker_id) {
-        const attachement: FacebookTypes.MessengerStickerAttachement = event.message.attachments.filter((attachement) => attachement.type === 'image')[0] as FacebookTypes.MessengerStickerAttachement;
-        const message: Message.ImageMessage = {
-          type: 'image',
-          url: attachement.payload.url,
-          id: uuidV1(),
-          conversation_id: event.recipient.id || event.recipient.phone_number,
-        };
-        return message;
       }
     }
 
